@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MusicVault - Universal Music Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
+
+        :root {
+            --primary: #ff6b6b;
+            --secondary: #ffd93d;
+            --accent: #6bcf7f;
+            --dark: #0a0e27;
+            --darker: #050812;
+            --light: #e8eef5;
+            --text: #ffffff;
+            --text-secondary: #b0b9cc;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loader {
+            text-align: center;
+        }
+
+        .music-notes {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .music-note {
+            font-size: 50px;
+            animation: bounce 0.8s ease-in-out infinite;
+        }
+
+        .music-note:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .music-note:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .music-note:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 0.6;
+            }
+            50% {
+                transform: translateY(-20px);
+                opacity: 1;
+            }
+        }
+
+        .loader-text {
+            font-size: 18px;
+            color: var(--secondary);
+            font-weight: 600;
+            margin-top: 20px;
+            letter-spacing: 1px;
+        }
+
+        /* Main Container */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 340px;
+            background: rgba(5, 8, 18, 0.95);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 25px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 35px;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .categories {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .category-title {
+            grid-column: 1 / -1;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .category-btn {
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+            flex-direction: column;
+        }
+
+        .category-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .category-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--dark);
+            border-color: transparent;
+            font-weight: 700;
+            grid-column: 1 / -1;
+        }
+
+        .category-icon {
+            font-size: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: rgba(10, 14, 39, 0.4);
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+        }
+
+        .header-title {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .search-box {
+            width: 220px;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            color: var(--text);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-box:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.2);
+        }
+
+        /* Songs Display Area */
+        .content-area {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            padding: 20px 30px;
+            overflow: hidden;
+        }
+
+        /* Songs Grid */
+        .songs-list {
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            padding-right: 10px;
+        }
+
+        .song-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .song-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 107, 107, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.2);
+        }
+
+        .song-card.active {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 217, 61, 0.2));
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .song-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .song-flag {
+            font-size: 28px;
+            min-width: 35px;
+        }
+
+        .play-icon {
+            font-size: 24px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            width: 30px;
+            text-align: right;
+        }
+
+        .song-card:hover .play-icon {
+            opacity: 1;
+        }
+
+        .song-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+        }
+
+        .song-artist {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-duration {
+            font-size: 10px;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 6px;
+            width: fit-content;
+        }
+
+        /* Player Bar */
+        .player-bar {
+            padding: 20px 30px;
+            background: rgba(5, 8, 18, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .now-playing {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-album {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+            animation: spin 3s linear infinite;
+            animation-play-state: paused;
+            flex-shrink: 0;
+        }
+
+        .player-album.playing {
+            animation-play-state: running;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .player-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .player-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-artist {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .progress-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .control-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .control-btn.play {
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            font-size: 22px;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        .control-btn.play:hover {
+            background: linear-gradient(135deg, #ff7a7a, #ffe550);
+            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.5);
+            transform: scale(1.05);
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 150px;
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .volume-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--secondary));
+            border-radius: 3px;
+            width: 70%;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 15px;
+                max-height: 40vh;
+                overflow-y: auto;
+            }
+
+            .categories {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .songs-list {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                padding: 10px 15px;
+                gap: 10px;
+            }
+
+            .player-bar {
+                padding: 15px;
+            }
+
+            .header {
+                padding: 15px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader">
+            <div class="music-notes">
+                <div class="music-note">🎵</div>
+                <div class="music-note">🎶</div>
+                <div class="music-note">🎵</div>
+            </div>
+            <div class="loader-text">Loading MusicVault</div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                🎵 MusicVault
+            </div>
+
+            <div class="categories">
+                <div class="category-title">Languages</div>
+                <button class="category-btn active" data-category="all">
+                    <span class="category-icon">🌍</span>
+                    All
+                </button>
+                <button class="category-btn" data-category="tamil">
+                    <span class="category-icon">🇮🇳</span>
+                    Tamil
+                </button>
+                <button class="category-btn" data-category="telugu">
+                    <span class="category-icon">🇮🇳</span>
+                    Telugu
+                </button>
+                <button class="category-btn" data-category="kannada">
+                    <span class="category-icon">🇮🇳</span>
+                    Kannada
+                </button>
+                <button class="category-btn" data-category="malayalam">
+                    <span class="category-icon">🇮🇳</span>
+                    Malayalam
+                </button>
+                <button class="category-btn" data-category="english">
+                    <span class="category-icon">🇬🇧</span>
+                    English
+                </button>
+                <button class="category-btn" data-category="hindi">
+                    <span class="category-icon">🇮🇳</span>
+                    Hindi
+                </button>
+                <button class="category-btn" data-category="spanish">
+                    <span class="category-icon">🇪🇸</span>
+                    Spanish
+                </button>
+                <button class="category-btn" data-category="french">
+                    <span class="category-icon">🇫🇷</span>
+                    French
+                </button>
+                <button class="category-btn" data-category="portuguese">
+                    <span class="category-icon">🇵🇹</span>
+                    Portuguese
+                </button>
+                <button class="category-btn" data-category="korean">
+                    <span class="category-icon">🇰🇷</span>
+                    Korean
+                </button>
+                <button class="category-btn" data-category="japanese">
+                    <span class="category-icon">🇯🇵</span>
+                    Japanese
+                </button>
+                <button class="category-btn" data-category="arabic">
+                    <span class="category-icon">🇸🇦</span>
+                    Arabic
+                </button>
+                <button class="category-btn" data-category="russian">
+                    <span class="category-icon">🇷🇺</span>
+                    Russian
+                </button>
+                <button class="category-btn" data-category="german">
+                    <span class="category-icon">🇩🇪</span>
+                    German
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h1 class="header-title" id="headerTitle">🌍 All Music</h1>
+                <input type="text" class="search-box" id="searchBox" placeholder="Search songs...">
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Songs Grid -->
+                <div class="songs-list" id="songsList"></div>
+            </div>
+
+            <!-- Player Bar -->
+            <div class="player-bar">
+                <div class="now-playing">
+                    <div class="player-album" id="playerAlbum">🎵</div>
+                    <div class="player-info">
+                        <div class="player-title" id="playerTitle">Select a Song</div>
+                        <div class="player-artist" id="playerArtist">No song selected</div>
+                        <div class="progress-container">
+                            <span id="currentTime">0:00</span>
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <span id="duration">0:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="controls">
+                        <button class="control-btn" id="prevBtn">⏮️</button>
+                        <button class="control-btn play" id="playBtn">▶️</button>
+                        <button class="control-btn" id="nextBtn">⏭️</button>
+                    </div>
+
+                    <div class="volume-control">
+                        <span style="font-size: 14px;">🔊</span>
+                        <div class="volume-slider" id="volumeSlider">
+                            <div class="volume-fill" id="volumeFill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer"></audio>
+
+    <script>
+        // Song Database
+        const songDatabase = {
+            tamil: [
+                { title: 'Kaavalan Kaavali', artist: 'Anirudh Ravichander', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:45' },
+                { title: 'Yennai Maatrum', artist: 'Siddharth', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:32' },
+                { title: 'Thamizh Puzhai', artist: 'Vijay Antony', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:28' },
+                { title: 'Mazhai Kuruvi', artist: 'Thaman', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:55' },
+                { title: 'Vaarnam Aayiram', artist: 'Harris Jayaraj', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:42' },
+                { title: 'Poovey Nila', artist: 'G.V. Prakash Kumar', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:36' },
+                { title: 'Irumal Saravey', artist: 'Dhanush', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:48' },
+                { title: 'Paar Magalae', artist: 'Karthik', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:40' },
+                { title: 'Neela Vaanam', artist: 'A.R. Rahman', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:52' },
+                { title: 'Sagaram Sakaram', artist: 'Sathyaprakash', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:38' }
+            ],
+            telugu: [
+                { title: 'Priyathama Neevachata', artist: 'Pawan Kalyan', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:44' },
+                { title: 'Telangana Bangaru', artist: 'S.P. Balasubrahmanyam', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:35' },
+                { title: 'Nachey Song', artist: 'Ram Gopal Varma', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:30' },
+                { title: 'Jaya He Telangana', artist: 'M.M. Keeravani', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:48' },
+                { title: 'Enduko Undi Pakkaki', artist: 'Kailash Kher', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:41' },
+                { title: 'Mogali Vennela', artist: 'Jagjit Singh', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:46' },
+                { title: 'Gudi Gudi Gunjalo', artist: 'Chitra', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:34' },
+                { title: 'Oilelo', artist: 'Sreerama Chandra', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:51' },
+                { title: 'Swapna Sthithi', artist: 'Usha', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:39' },
+                { title: 'Prem Thodalo', artist: 'K.S. Chithra', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:45' }
+            ],
+            kannada: [
+                { title: 'Kannada Deshada', artist: 'Vishnuvardhan', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:43' },
+                { title: 'Prathamavey Mottai', artist: 'Ravichandran', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:37' },
+                { title: 'Nanna Kanasu', artist: 'Sudeepa', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:44' },
+                { title: 'Yakshagana Geetham', artist: 'Shankar Nag', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:52' },
+                { title: 'Hoovada Hoovada', artist: 'Giridhar', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:40' },
+                { title: 'Vasantha Bhoomi', artist: 'Malini Awasthi', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:47' },
+                { title: 'Kannada Neralu', artist: 'Upendra', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:33' },
+                { title: 'Namma Kannada', artist: 'Rajkumar', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:49' },
+                { title: 'Ramachari', artist: 'Puneeth Rajkumar', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:38' },
+                { title: 'Beladingalada', artist: 'Darshan', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:46' }
+            ],
+            malayalam: [
+                { title: 'Malayalam Manorama', artist: 'K.J. Yesudas', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:41' },
+                { title: 'Poo Pookkum Vanam', artist: 'M.G. Sreekumar', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:36' },
+                { title: 'Kaveri Subhah', artist: 'Hari Haran', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:50' },
+                { title: 'Pushpanjali Varnna', artist: 'Bombay Jayashri', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:44' },
+                { title: 'Janani Janma Bhumi', artist: 'P. Jayachandran', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:39' },
+                { title: 'Keralam Varnam', artist: 'Sithara', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:48' },
+                { title: 'Theepandi Theepandi', artist: 'Sunitha', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:35' },
+                { title: 'Ghanashyam Govinda', artist: 'Srinivas', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:52' },
+                { title: 'Natanam Adipooram', artist: 'Mahesh', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:43' },
+                { title: 'Saranam Saranam', artist: 'Afsal', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:40' }
+            ],
+            hindi: [
+                { title: 'Pal Pal Dil Ke Paas', artist: 'Kumar Sanu', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:42' },
+                { title: 'Suraj Hua Maddham', artist: 'A.R. Rahman', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:38' },
+                { title: 'Aashiqui Mein Teri', artist: 'Udit Narayan', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:46' },
+                { title: 'Dil Dooba Hai', artist: 'Saif Ali Khan', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:51' },
+                { title: 'Kabhi Kabhi Aditi', artist: 'Jagjit Singh', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:44' },
+                { title: 'Raat Akeli Hai', artist: 'Anupama Dey', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:39' },
+                { title: 'Tum Mere Ho', artist: 'Rishi Rich', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:47' },
+                { title: 'Haan Tu Hai', artist: 'Shreya Ghoshal', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:34' },
+                { title: 'Main Teri Chunar', artist: 'Lata Mangeshkar', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:50' },
+                { title: 'Dil Aaj Kal Hera', artist: 'Mohammed Rafi', flag: '🇮🇳', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:45' }
+            ],
+            english: [
+                { title: 'Midnight Dreams', artist: 'Luna Echo', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:27' },
+                { title: 'Electric Pulse', artist: 'Synth Masters', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:35' },
+                { title: 'Ocean Waves', artist: 'Ambient Thoughts', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:32' },
+                { title: 'Neon Lights', artist: 'Cyber Wave', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:33' },
+                { title: 'Golden Memories', artist: 'Nostalgic Beats', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:27' },
+                { title: 'Quantum Shift', artist: 'Tech Pioneers', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:36' },
+                { title: 'Eternal Connection', artist: 'Timeless Bond', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:32' },
+                { title: 'Sunset Boulevard', artist: 'Golden Hour', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:26' },
+                { title: 'Infinite Loop', artist: 'Digital Dreams', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:34' },
+                { title: 'Phoenix Rising', artist: 'Fire & Flames', flag: '🇬🇧', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:27' }
+            ],
+            spanish: [
+                { title: 'Mi Amor Eterno', artist: 'Carlos Santana', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:45' },
+                { title: 'Corazón Salvaje', artist: 'Ricky Martin', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:38' },
+                { title: 'Bailando en el Fuego', artist: 'Enrique Iglesias', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:41' },
+                { title: 'Viento de Cambio', artist: 'Juan Gabriel', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:52' },
+                { title: 'Noche Española', artist: 'Los Fabulosos Cadillacs', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:44' },
+                { title: 'Tierra del Fuego', artist: 'Mercedes Sosa', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:39' },
+                { title: 'Rumba Cubana', artist: 'Buena Vista', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:48' },
+                { title: 'Serenata Andaluz', artist: 'José Luis Perales', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:35' },
+                { title: 'Duende Flamenco', artist: 'Camarón de la Isla', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:50' },
+                { title: 'Pasión Latina', artist: 'Marc Anthony', flag: '🇪🇸', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:43' }
+            ],
+            french: [
+                { title: 'Mon Amour', artist: 'Edith Piaf', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:44' },
+                { title: 'La Vie en Rose', artist: 'Françoise Hardy', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:36' },
+                { title: 'Sous les Étoiles', artist: 'Yves Montand', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:49' },
+                { title: 'Rêve de Paris', artist: 'Charles Aznavour', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:40' },
+                { title: 'Chanson du Coeur', artist: 'Brigitte Bardot', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:38' },
+                { title: 'Lumière Douce', artist: 'Jacques Brel', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:45' },
+                { title: 'Nuit Étoilée', artist: 'Georges Brassens', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:37' },
+                { title: 'Romance Parisienne', artist: 'Serge Gainsbourg', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:51' },
+                { title: 'Mélodie du Ciel', artist: 'France Gall', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:34' },
+                { title: 'Souffle du Vent', artist: 'Claude Jade', flag: '🇫🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:46' }
+            ],
+            portuguese: [
+                { title: 'Amor Infinito', artist: 'Tom Jobim', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:42' },
+                { title: 'Saudade', artist: 'Caetano Veloso', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:39' },
+                { title: 'Bossa Nova Noite', artist: 'João Gilberto', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:47' },
+                { title: 'Garota de Ipanema', artist: 'Antônio Carlos Jobim', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:44' },
+                { title: 'Vem Cá Meu Amor', artist: 'Gisele João', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:41' },
+                { title: 'Corações Apaixonados', artist: 'Fado Português', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:50' },
+                { title: 'Noites do Brasil', artist: 'Seu Jorge', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:36' },
+                { title: 'Ritmo do Coração', artist: 'Marisa Monte', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:52' },
+                { title: 'Melancia', artist: 'Anitta', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:35' },
+                { title: 'Pra Sempre Amado', artist: 'Alcione', flag: '🇵🇹', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:43' }
+            ],
+            korean: [
+                { title: '사랑하나봐', artist: 'IU', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:46' },
+                { title: '봄날', artist: 'BTS', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:39' },
+                { title: '약속', artist: 'TWICE', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:34' },
+                { title: '서울의 밤', artist: 'Epik High', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:51' },
+                { title: '하늘빛', artist: 'BLACKPINK', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:41' },
+                { title: '별 하나', artist: 'Taeyeon', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:44' },
+                { title: '그리움', artist: 'Ailee', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:38' },
+                { title: '마음', artist: 'EXO', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:48' },
+                { title: '새벽', artist: 'Sunmi', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:35' },
+                { title: '사랑했다', artist: 'Gummy', flag: '🇰🇷', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:47' }
+            ],
+            japanese: [
+                { title: '桜の季節', artist: 'YUKI', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:43' },
+                { title: '君に逢いたい', artist: '中島みゆき', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:36' },
+                { title: '星月夜', artist: '宮本浩次', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:50' },
+                { title: '心の奥底', artist: '坂本真綾', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:41' },
+                { title: '愛するあなたへ', artist: '福山雅治', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:39' },
+                { title: '海辺の町で', artist: '米津玄師', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:45' },
+                { title: '夢の中へ', artist: 'RADWIMPS', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:37' },
+                { title: '月の光', artist: '菅田将暉', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:52' },
+                { title: '心の底から', artist: '乃木坂46', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:34' },
+                { title: '時間は金なり', artist: '欅坂46', flag: '🇯🇵', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:46' }
+            ],
+            arabic: [
+                { title: 'حبيبي يا نور', artist: 'Umm Kulthum', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:44' },
+                { title: 'يا ليل يا عين', artist: 'Fairuz', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:38' },
+                { title: 'قلبي ينادي', artist: 'Abdel Halim Hafez', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:47' },
+                { title: 'موعد الحب', artist: 'Oum Kalthoum', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:51' },
+                { title: 'الليل الطويل', artist: 'Marcel Khalife', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:42' },
+                { title: 'أنتِ أحلامي', artist: 'Amr Diab', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:39' },
+                { title: 'في القلب مكان', artist: 'Samira Said', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:48' },
+                { title: 'كل الحب', artist: 'Nawal Al Zoghbi', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:35' },
+                { title: 'ليلة الحب', artist: 'Mahsoul Malk', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:50' },
+                { title: 'بحبك بجنون', artist: 'Hayfa Wehbe', flag: '🇸🇦', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:44' }
+            ],
+            russian: [
+                { title: 'Ночь и звёзды', artist: 'Mikhail Leontovich', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:45' },
+                { title: 'На Берегу', artist: 'Alexander Nevsky', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:40' },
+                { title: 'Моя Душа', artist: 'Sergei Rachmaninoff', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:48' },
+                { title: 'Вечерний Звон', artist: 'Aleksei Lvov', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:42' },
+                { title: 'Любовь Вечная', artist: 'Grigory Sviridov', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:38' },
+                { title: 'Санкт-Петербург', artist: 'Pyotr Ilyich Tchaikovsky', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:46' },
+                { title: 'Черная Роза', artist: 'Igor Stravinsky', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:37' },
+                { title: 'Сердце Поет', artist: 'Nikolai Rimsky-Korsakov', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:51' },
+                { title: 'Синие Дали', artist: 'Dmitri Shostakovich', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:39' },
+                { title: 'Музыка Души', artist: 'Vladimir Sycherenko', flag: '🇷🇺', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:47' }
+            ],
+            german: [
+                { title: 'Lied der Liebe', artist: 'Wolfgang Amadeus Mozart', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:43' },
+                { title: 'Kleine Nacht', artist: 'Ludwig van Beethoven', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:38' },
+                { title: 'Schöne Träume', artist: 'Franz Schubert', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:49' },
+                { title: 'Herz am Rhein', artist: 'Johannes Brahms', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:44' },
+                { title: 'Walzer Zeit', artist: 'Johann Strauss', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:40' },
+                { title: 'Berlin Nacht', artist: 'Richard Wagner', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:47' },
+                { title: 'Schwarzwald', artist: 'Georg Friedrich Händel', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: '3:36' },
+                { title: 'Deutsche Leidenschaft', artist: 'Carl Orff', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: '3:52' },
+                { title: 'Alpenglühen', artist: 'Carl Maria von Weber', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '3:34' },
+                { title: 'Herz und Seele', artist: 'Felix Mendelssohn', flag: '🇩🇪', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:45' }
+            ]
+        };
+
+        // Get all songs
+        let allSongs = [];
+        Object.values(songDatabase).forEach(categoryArray => {
+            allSongs = allSongs.concat(categoryArray);
+        });
+
+        // State
+        let currentCategory = 'all';
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let filteredSongs = [...allSongs];
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const songsList = document.getElementById('songsList');
+        const audio = document.getElementById('audioPlayer');
+        const playBtn = document.getElementById('playBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const searchBox = document.getElementById('searchBox');
+        const headerTitle = document.getElementById('headerTitle');
+        const playerTitle = document.getElementById('playerTitle');
+        const playerArtist = document.getElementById('playerArtist');
+        const playerAlbum = document.getElementById('playerAlbum');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const currentTimeEl = document.getElementById('currentTime');
+        const durationEl = document.getElementById('duration');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeFill = document.getElementById('volumeFill');
+
+        // Initialize
+        function init() {
+            // Hide loading screen after 2 seconds
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                renderSongs();
+            }, 1800);
+
+            setupEventListeners();
+            audio.volume = 0.7;
+            volumeFill.style.width = '70%';
+        }
+
+        // Render songs
+        function renderSongs() {
+            songsList.innerHTML = filteredSongs.map((song, index) => `
+                <div class="song-card" data-index="${index}" onclick="selectSong(${index})">
+                    <div class="song-card-header">
+                        <span class="song-flag">${song.flag}</span>
+                        <span class="play-icon">▶️</span>
+                    </div>
+                    <div class="song-title">${song.title}</div>
+                    <div class="song-artist">${song.artist}</div>
+                    <div class="song-duration">${song.duration}</div>
+                </div>
+            `).join('');
+        }
+
+        // Select song
+        window.selectSong = function(index) {
+            currentSongIndex = index;
+            loadSong(currentSongIndex);
+            playSong();
+            updateActiveCard();
+        };
+
+        // Load song
+        function loadSong(index) {
+            const song = filteredSongs[index];
+            audio.src = song.url;
+            playerTitle.textContent = song.title;
+            playerArtist.textContent = song.artist;
+            playerAlbum.textContent = song.flag;
+        }
+
+        // Play song
+        function playSong() {
+            audio.play();
+            isPlaying = true;
+            playBtn.textContent = '⏸️';
+            playerAlbum.classList.add('playing');
+        }
+
+        // Pause song
+        function pauseSong() {
+            audio.pause();
+            isPlaying = false;
+            playBtn.textContent = '▶️';
+            playerAlbum.classList.remove('playing');
+        }
+
+        // Toggle play/pause
+        function togglePlay() {
+            isPlaying ? pauseSong() : playSong();
+        }
+
+        // Next song
+        function nextSong() {
+            currentSongIndex = (currentSongIndex + 1) % filteredSongs.length;
+            loadSong(currentSongIndex);
+            playSong();
+            updateActiveCard();
+        }
+
+        // Previous song
+        function prevSong() {
+            currentSongIndex = (currentSongIndex - 1 + filteredSongs.length) % filteredSongs.length;
+            loadSong(currentSongIndex);
+            playSong();
+            updateActiveCard();
+        }
+
+        // Update active card
+        function updateActiveCard() {
+            document.querySelectorAll('.song-card').forEach((card, i) => {
+                card.classList.toggle('active', i === currentSongIndex);
+            });
+        }
+
+        // Format time
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${String(secs).padStart(2, '0')}`;
+        }
+
+        // Update progress
+        function updateProgress() {
+            if (audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressFill.style.width = `${percent}%`;
+                currentTimeEl.textContent = formatTime(audio.currentTime);
+            }
+        }
+
+        // Seek song
+        function seekSong(e) {
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = percent * audio.duration;
+        }
+
+        // Update volume
+        function updateVolume(e) {
+            const rect = volumeSlider.getBoundingClientRect();
+            const percent = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            audio.volume = percent / 100;
+            volumeFill.style.width = `${percent}%`;
+        }
+
+        // Filter songs
+        function filterSongs() {
+            const query = searchBox.value.toLowerCase();
+            if (currentCategory === 'all') {
+                filteredSongs = [...allSongs];
+            } else {
+                filteredSongs = [...songDatabase[currentCategory]];
+            }
+            if (query) {
+                filteredSongs = filteredSongs.filter(song => 
+                    song.title.toLowerCase().includes(query) || 
+                    song.artist.toLowerCase().includes(query)
+                );
+            }
+            renderSongs();
+            currentSongIndex = 0;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    categoryBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const category = btn.dataset.category;
+                    currentCategory = category;
+                    
+                    if (category === 'all') {
+                        filteredSongs = [...allSongs];
+                        headerTitle.textContent = '🌍 All Music';
+                    } else {
+                        filteredSongs = [...songDatabase[category]];
+                        headerTitle.textContent = `${btn.textContent}`;
+                    }
+                    renderSongs();
+                    currentSongIndex = 0;
+                });
+            });
+
+            playBtn.addEventListener('click', togglePlay);
+            prevBtn.addEventListener('click', prevSong);
+            nextBtn.addEventListener('click', nextSong);
+
+            searchBox.addEventListener('input', filterSongs);
+
+            progressBar.addEventListener('click', seekSong);
+            volumeSlider.addEventListener('click', updateVolume);
+
+            audio.addEventListener('timeupdate', updateProgress);
+            audio.addEventListener('ended', nextSong);
+            audio.addEventListener('loadedmetadata', () => {
+                durationEl.textContent = formatTime(audio.duration);
+            });
+        }
+
+        // Start app
+        init();
+    </script>
+</body>
+</html>
