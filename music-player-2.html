@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MusicVault - Music Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #ff6b35;
+            --primary-light: #ffa559;
+            --secondary: #1a1a2e;
+            --tertiary: #0f3460;
+            --accent: #ffd700;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --border-color: #2a2a3e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--tertiary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(26, 26, 46, 0.95);
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 32px;
+            margin-bottom: 10px;
+            animation: bounce 0.8s ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .language-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .language-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .language-btn {
+            padding: 15px 10px;
+            border: 2px solid var(--border-color);
+            background: rgba(50, 50, 70, 0.6);
+            color: var(--text-primary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .language-btn:hover {
+            border-color: var(--primary);
+            background: rgba(50, 50, 70, 1);
+            transform: translateY(-2px);
+        }
+
+        .language-btn.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-color: var(--primary);
+            color: #000;
+        }
+
+        .all-languages-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border: none;
+            color: #000;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .all-languages-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
+        }
+
+        .all-languages-btn.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        }
+
+        .player-section {
+            margin-bottom: 25px;
+        }
+
+        .now-playing {
+            background: rgba(50, 50, 70, 0.6);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .album-art {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--tertiary) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+            animation: rotate 3s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .album-art.paused {
+            animation: none;
+        }
+
+        .song-info h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        .song-info p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .progress-container {
+            margin-bottom: 20px;
+        }
+
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(100, 100, 120, 0.5);
+            border-radius: 3px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(50, 50, 70, 0.8);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--border-color);
+        }
+
+        .control-btn:hover {
+            border-color: var(--primary);
+            transform: scale(1.1);
+            background: rgba(50, 50, 70, 1);
+        }
+
+        .play-btn {
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border: none;
+            color: #000;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .play-btn:hover {
+            border-color: var(--primary);
+            transform: scale(1.08);
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(50, 50, 70, 0.6);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .volume-control input {
+            flex: 1;
+            height: 6px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .volume-label {
+            font-size: 12px;
+            min-width: 30px;
+        }
+
+        .playlist-section {
+            margin-top: 25px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .playlist-section::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .playlist-section::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .playlist-section::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .playlist-item {
+            padding: 12px;
+            background: rgba(50, 50, 70, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .playlist-item:hover {
+            background: rgba(50, 50, 70, 0.8);
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .playlist-item.active {
+            background: linear-gradient(135deg, var(--primary) 0%, rgba(255, 107, 53, 0.3) 100%);
+            border-color: var(--primary);
+        }
+
+        .playlist-item-name {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .playlist-item-duration {
+            color: var(--text-secondary);
+            margin-left: 10px;
+            font-size: 11px;
+        }
+
+        .autoplay-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: rgba(50, 50, 70, 0.6);
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background: var(--border-color);
+            border-radius: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-circle {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-circle {
+            transform: translateX(18px);
+        }
+
+        .no-songs {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .hidden-metadata {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎵</div>
+            <h1 class="title">MusicVault</h1>
+            <p class="subtitle">Your Music, Your Language</p>
+        </div>
+
+        <!-- Language Selection -->
+        <div class="language-section">
+            <div class="section-title">Languages</div>
+            <button class="all-languages-btn active" data-lang="all" id="allLangBtn">
+                🌍 All
+            </button>
+            <div class="language-grid">
+                <button class="language-btn" data-lang="tamil">🇮🇳 Tamil</button>
+                <button class="language-btn" data-lang="telugu">🇮🇳 Telugu</button>
+                <button class="language-btn" data-lang="kannada">🇮🇳 Kannada</button>
+                <button class="language-btn" data-lang="malayalam">🇮🇳 Malayalam</button>
+                <button class="language-btn" data-lang="english">🇬🇧 English</button>
+                <button class="language-btn" data-lang="hindi">🇮🇳 Hindi</button>
+            </div>
+        </div>
+
+        <!-- Player -->
+        <div class="player-section">
+            <div class="section-title">Now Playing</div>
+            <div class="now-playing">
+                <div class="album-art" id="albumArt">🎵</div>
+                <div class="song-info">
+                    <h2 id="songTitle">Select a song</h2>
+                    <p id="artistName">Artist</p>
+                    <p id="durationDisplay">0:00</p>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div class="time-info">
+                    <span id="currentTime">0:00</span>
+                    <span id="totalTime">0:00</span>
+                </div>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button class="control-btn" id="prevBtn" title="Previous">⏮</button>
+                <button class="play-btn" id="playBtn" title="Play">▶</button>
+                <button class="control-btn" id="nextBtn" title="Next">⏭</button>
+            </div>
+
+            <!-- Volume Control -->
+            <div class="volume-control">
+                <span class="volume-label">🔊</span>
+                <input type="range" id="volumeControl" min="0" max="100" value="70" title="Volume">
+                <span class="volume-label" id="volumeDisplay">70%</span>
+            </div>
+
+            <!-- Autoplay Toggle -->
+            <div class="autoplay-toggle">
+                <span style="font-size: 13px;">Autoplay</span>
+                <div class="toggle-switch" id="autoplayToggle">
+                    <div class="toggle-circle"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Playlist -->
+        <div class="language-section">
+            <div class="section-title">All Music</div>
+            <div class="playlist-section" id="playlistContainer">
+                <div class="no-songs">No songs available</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Metadata Storage -->
+    <script>
+        const songLibrary = [
+            // Tamil Songs
+            {
+                id: 'tam1',
+                title: 'Hoovada Hoovada',
+                artist: 'Girtdhar',
+                language: 'tamil',
+                duration: 271,
+                color: '#ff6b35'
+            },
+            {
+                id: 'tam2',
+                title: 'Kaattu Payale',
+                artist: 'Anirudh Ravichander',
+                language: 'tamil',
+                duration: 218,
+                color: '#ffa559'
+            },
+            {
+                id: 'tam3',
+                title: 'Vaathi Coming',
+                artist: 'Thaman S',
+                language: 'tamil',
+                duration: 189,
+                color: '#ff8c42'
+            },
+            {
+                id: 'tam4',
+                title: 'Poojai Aadhey',
+                artist: 'Harris Jayaraj',
+                language: 'tamil',
+                duration: 245,
+                color: '#ff6b35'
+            },
+            {
+                id: 'tam5',
+                title: 'Nenjinai Needhi',
+                artist: 'Shreya Ghoshal',
+                language: 'tamil',
+                duration: 267,
+                color: '#ffa559'
+            },
+
+            // Telugu Songs
+            {
+                id: 'tel1',
+                title: 'Samajavaragamana',
+                artist: 'Sid Sriram',
+                language: 'telugu',
+                duration: 276,
+                color: '#ff6b35'
+            },
+            {
+                id: 'tel2',
+                title: 'Raatilo Unnave',
+                artist: 'Mangli',
+                language: 'telugu',
+                duration: 298,
+                color: '#ffa559'
+            },
+            {
+                id: 'tel3',
+                title: 'Tera Naam',
+                artist: 'Tulsi Kumar',
+                language: 'telugu',
+                duration: 267,
+                color: '#ff8c42'
+            },
+            {
+                id: 'tel4',
+                title: 'Jalsa Jalsa',
+                artist: 'Rahul Sipligunj',
+                language: 'telugu',
+                duration: 245,
+                color: '#ff6b35'
+            },
+            {
+                id: 'tel5',
+                title: 'Ee Aaliyanu',
+                artist: 'Kailash Kher',
+                language: 'telugu',
+                duration: 289,
+                color: '#ffa559'
+            },
+
+            // Kannada Songs
+            {
+                id: 'kan1',
+                title: 'Arjun Janya',
+                artist: 'Challenging Star Darshan',
+                language: 'kannada',
+                duration: 289,
+                color: '#ff6b35'
+            },
+            {
+                id: 'kan2',
+                title: 'Gulabi Eyes',
+                artist: 'Shreya Ghoshal',
+                language: 'kannada',
+                duration: 256,
+                color: '#ffa559'
+            },
+            {
+                id: 'kan3',
+                title: 'Sade Sode',
+                artist: 'Hamsalekha',
+                language: 'kannada',
+                duration: 215,
+                color: '#ff8c42'
+            },
+            {
+                id: 'kan4',
+                title: 'Ninna Neeve',
+                artist: 'Amith Hegde',
+                language: 'kannada',
+                duration: 267,
+                color: '#ff6b35'
+            },
+            {
+                id: 'kan5',
+                title: 'Manase Manase',
+                artist: 'Malini Awasthi',
+                language: 'kannada',
+                duration: 243,
+                color: '#ffa559'
+            },
+
+            // Malayalam Songs
+            {
+                id: 'mal1',
+                title: 'Mayazhe Neelima',
+                artist: 'Vineeth Sreenivasan',
+                language: 'malayalam',
+                duration: 267,
+                color: '#ff6b35'
+            },
+            {
+                id: 'mal2',
+                title: 'Enne Enne Monalisa',
+                artist: 'Kailash Kher',
+                language: 'malayalam',
+                duration: 298,
+                color: '#ffa559'
+            },
+            {
+                id: 'mal3',
+                title: 'Poojanam Poojanam',
+                artist: 'K.J. Yesudas',
+                language: 'malayalam',
+                duration: 234,
+                color: '#ff8c42'
+            },
+            {
+                id: 'mal4',
+                title: 'Kaavyam Kaavyam',
+                artist: 'Shreya Ghoshal',
+                language: 'malayalam',
+                duration: 276,
+                color: '#ff6b35'
+            },
+            {
+                id: 'mal5',
+                title: 'Vanam Vanam',
+                artist: 'Geethanjali',
+                language: 'malayalam',
+                duration: 245,
+                color: '#ffa559'
+            },
+
+            // English Songs
+            {
+                id: 'eng1',
+                title: 'Perfect',
+                artist: 'Ed Sheeran',
+                language: 'english',
+                duration: 263,
+                color: '#ff6b35'
+            },
+            {
+                id: 'eng2',
+                title: 'Someone Like You',
+                artist: 'Adele',
+                language: 'english',
+                duration: 285,
+                color: '#ffa559'
+            },
+            {
+                id: 'eng3',
+                title: 'Shape of You',
+                artist: 'Ed Sheeran',
+                language: 'english',
+                duration: 234,
+                color: '#ff8c42'
+            },
+            {
+                id: 'eng4',
+                title: 'Blinding Lights',
+                artist: 'The Weeknd',
+                language: 'english',
+                duration: 200,
+                color: '#ff6b35'
+            },
+            {
+                id: 'eng5',
+                title: 'Levitating',
+                artist: 'Dua Lipa',
+                language: 'english',
+                duration: 203,
+                color: '#ffa559'
+            },
+
+            // Hindi Songs
+            {
+                id: 'hin1',
+                title: 'Tum Hi Ho',
+                artist: 'Arijit Singh',
+                language: 'hindi',
+                duration: 254,
+                color: '#ff6b35'
+            },
+            {
+                id: 'hin2',
+                title: 'Raatan Lambiyan',
+                artist: 'Arijit Singh',
+                language: 'hindi',
+                duration: 267,
+                color: '#ffa559'
+            },
+            {
+                id: 'hin3',
+                title: 'Shayad',
+                artist: 'Pritam',
+                language: 'hindi',
+                duration: 276,
+                color: '#ff8c42'
+            },
+            {
+                id: 'hin4',
+                title: 'Chaleya',
+                artist: 'Arijit Singh',
+                language: 'hindi',
+                duration: 289,
+                color: '#ff6b35'
+            },
+            {
+                id: 'hin5',
+                title: 'Kesariya',
+                artist: 'Arijit Singh',
+                language: 'hindi',
+                duration: 234,
+                color: '#ffa559'
+            }
+        ];
+
+        // Player State
+        let currentPlaylist = [];
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let autoplay = false;
+        let selectedLanguage = 'all';
+
+        // DOM Elements
+        const playBtn = document.getElementById('playBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const songTitle = document.getElementById('songTitle');
+        const artistName = document.getElementById('artistName');
+        const albumArt = document.getElementById('albumArt');
+        const progressFill = document.getElementById('progressFill');
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeEl = document.getElementById('currentTime');
+        const totalTimeEl = document.getElementById('totalTime');
+        const volumeControl = document.getElementById('volumeControl');
+        const volumeDisplay = document.getElementById('volumeDisplay');
+        const playlistContainer = document.getElementById('playlistContainer');
+        const autoplayToggle = document.getElementById('autoplayToggle');
+        const durationDisplay = document.getElementById('durationDisplay');
+
+        // Audio Element
+        let audio = new Audio();
+        audio.volume = 0.7;
+
+        // Functions
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updatePlaylist() {
+            currentPlaylist = selectedLanguage === 'all' 
+                ? songLibrary 
+                : songLibrary.filter(song => song.language === selectedLanguage);
+
+            playlistContainer.innerHTML = '';
+
+            if (currentPlaylist.length === 0) {
+                playlistContainer.innerHTML = '<div class="no-songs">No songs available for this language</div>';
+                return;
+            }
+
+            currentPlaylist.forEach((song, index) => {
+                const item = document.createElement('div');
+                item.className = 'playlist-item';
+                if (index === currentSongIndex && currentPlaylist[currentSongIndex] === currentPlaylist[index]) {
+                    item.classList.add('active');
+                }
+                item.innerHTML = `
+                    <span class="playlist-item-name">${song.title}</span>
+                    <span class="playlist-item-duration">${formatTime(song.duration)}</span>
+                `;
+                item.addEventListener('click', () => {
+                    currentSongIndex = index;
+                    loadSong();
+                    play();
+                });
+                playlistContainer.appendChild(item);
+            });
+        }
+
+        function loadSong() {
+            const song = currentPlaylist[currentSongIndex];
+            if (!song) return;
+
+            songTitle.textContent = song.title;
+            artistName.textContent = song.artist;
+            durationDisplay.textContent = formatTime(song.duration);
+            totalTimeEl.textContent = formatTime(song.duration);
+            albumArt.style.background = `linear-gradient(135deg, ${song.color} 0%, rgba(15, 52, 96, 1) 100%)`;
+
+            // Create a dummy audio source (in real app, this would be actual audio URL)
+            audio.src = `data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==`;
+            audio.duration = song.duration;
+
+            updatePlaylistUI();
+        }
+
+        function play() {
+            isPlaying = true;
+            playBtn.textContent = '⏸';
+            albumArt.classList.remove('paused');
+            // In real app: audio.play();
+            simulatePlayback();
+        }
+
+        function pause() {
+            isPlaying = false;
+            playBtn.textContent = '▶';
+            albumArt.classList.add('paused');
+            // In real app: audio.pause();
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                pause();
+            } else {
+                play();
+            }
+        }
+
+        function nextSong() {
+            currentSongIndex = (currentSongIndex + 1) % currentPlaylist.length;
+            loadSong();
+            if (isPlaying) play();
+        }
+
+        function prevSong() {
+            currentSongIndex = (currentSongIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+            loadSong();
+            if (isPlaying) play();
+        }
+
+        function updatePlaylistUI() {
+            document.querySelectorAll('.playlist-item').forEach((item, index) => {
+                item.classList.remove('active');
+                if (index === currentSongIndex) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        function simulatePlayback() {
+            let elapsedTime = 0;
+            const interval = setInterval(() => {
+                if (!isPlaying) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                elapsedTime += 0.1;
+                const song = currentPlaylist[currentSongIndex];
+                
+                if (elapsedTime >= song.duration) {
+                    if (autoplay) {
+                        nextSong();
+                        elapsedTime = 0;
+                    } else {
+                        pause();
+                        clearInterval(interval);
+                    }
+                    return;
+                }
+
+                currentTimeEl.textContent = formatTime(elapsedTime);
+                progressFill.style.width = (elapsedTime / song.duration * 100) + '%';
+            }, 100);
+        }
+
+        // Event Listeners
+        playBtn.addEventListener('click', togglePlay);
+        nextBtn.addEventListener('click', nextSong);
+        prevBtn.addEventListener('click', prevSong);
+
+        // Language Selection
+        document.querySelectorAll('[data-lang]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-lang]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                selectedLanguage = this.dataset.lang;
+                currentSongIndex = 0;
+                updatePlaylist();
+                loadSong();
+            });
+        });
+
+        // Volume Control
+        volumeControl.addEventListener('input', (e) => {
+            const vol = e.target.value;
+            volumeDisplay.textContent = vol + '%';
+            audio.volume = vol / 100;
+        });
+
+        // Autoplay Toggle
+        autoplayToggle.addEventListener('click', () => {
+            autoplay = !autoplay;
+            autoplayToggle.classList.toggle('active');
+        });
+
+        // Progress Bar Click
+        progressBar.addEventListener('click', (e) => {
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            const song = currentPlaylist[currentSongIndex];
+            if (song) {
+                const newTime = percent * song.duration;
+                currentTimeEl.textContent = formatTime(newTime);
+                progressFill.style.width = (percent * 100) + '%';
+            }
+        });
+
+        // Initialize
+        updatePlaylist();
+        if (currentPlaylist.length > 0) {
+            loadSong();
+        }
+    </script>
+</body>
+</html>
